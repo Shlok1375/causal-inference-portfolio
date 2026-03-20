@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Causal Inference in Product Analytics — Shlok Sheth</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0A0D12;
+      --surface:  #111520;
+      --border:   #1E2433;
+      --text:     #CDD6F4;
+      --muted:    #6C7086;
+      --accent:   #89B4FA;
+      --green:    #A6E3A1;
+      --orange:   #FAB387;
+      --purple:   #CBA6F7;
+      --gold:     #F9E2AF;
+      --red:      #F38BA8;
+      --serif:    'DM Serif Display', Georgia, serif;
+      --mono:     'DM Mono', 'Courier New', monospace;
+      --sans:     'DM Sans', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Nav ─────────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.1rem 2.5rem;
+      background: rgba(10, 13, 18, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: 0.05em;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── Layout ──────────────────────────────────────── */
+    .wrapper {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 5rem 2rem 8rem;
+    }
+
+    /* ── Header ──────────────────────────────────────── */
+    .post-header { margin-bottom: 3.5rem; }
+
+    .post-tag {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(137, 180, 250, 0.08);
+      border: 1px solid rgba(137, 180, 250, 0.2);
+      padding: 0.25rem 0.75rem;
+      border-radius: 2px;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 5vw, 3rem);
+      line-height: 1.15;
+      color: #E6EDF3;
+      margin-bottom: 1rem;
+      font-weight: 400;
+    }
+    h1 em { color: var(--accent); font-style: italic; }
+
+    .post-meta {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-top: 1.2rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--border);
+    }
+    .post-meta span { display: flex; align-items: center; gap: 0.4rem; }
+
+    /* ── TL;DR card ──────────────────────────────────── */
+    .tldr {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 3rem;
+    }
+    .tldr-label {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+    .tldr p { font-size: 0.95rem; color: var(--text); line-height: 1.7; }
+
+    /* ── Body copy ───────────────────────────────────── */
+    h2 {
+      font-family: var(--serif);
+      font-size: 1.6rem;
+      font-weight: 400;
+      color: #E6EDF3;
+      margin: 3rem 0 1rem;
+      padding-top: 1rem;
+    }
+
+    h3 {
+      font-family: var(--sans);
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+      margin: 2rem 0 0.6rem;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+      letter-spacing: 0.1em;
+    }
+
+    p { margin-bottom: 1.2rem; color: var(--text); font-weight: 300; }
+
+    strong { font-weight: 500; color: #E6EDF3; }
+
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(137,180,250,0.3); transition: border-color 0.2s; }
+    a:hover { border-color: var(--accent); }
+
+    /* ── Metric cards ────────────────────────────────── */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.25rem 1rem;
+      text-align: center;
+    }
+    .metric-card .val {
+      font-family: var(--mono);
+      font-size: 1.6rem;
+      font-weight: 500;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+    .metric-card .label {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .metric-card .sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+    .val.orange { color: var(--orange); }
+    .val.blue   { color: var(--accent); }
+    .val.purple { color: var(--purple); }
+    .val.green  { color: var(--green); }
+    .val.gold   { color: var(--gold); }
+    .val.red    { color: var(--red); }
+
+    /* ── Method table ────────────────────────────────── */
+    .method-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 2rem 0;
+    }
+    .method-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      background: var(--surface);
+      padding: 0;
+    }
+    .method-row.header {
+      background: rgba(137,180,250,0.06);
+    }
+    .method-cell {
+      padding: 0.9rem 1rem;
+      font-size: 0.88rem;
+      border-right: 1px solid var(--border);
+    }
+    .method-cell:last-child { border-right: none; }
+    .method-row.header .method-cell {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── Code block ──────────────────────────────────── */
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    .code-block pre {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre;
+    }
+    .c-orange { color: var(--orange); }
+    .c-green  { color: var(--green); }
+    .c-blue   { color: var(--accent); }
+    .c-muted  { color: var(--muted); }
+    .c-gold   { color: var(--gold); }
+    .c-purple { color: var(--purple); }
+
+    /* ── Figure ──────────────────────────────────────── */
+    .figure {
+      margin: 2.5rem 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .figure img {
+      width: 100%;
+      display: block;
+    }
+    .figure-caption {
+      padding: 0.75rem 1.25rem;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Callout ─────────────────────────────────────── */
+    .callout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.25rem 1.5rem;
+      margin: 2rem 0;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .callout-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+    .callout-body { font-size: 0.92rem; line-height: 1.65; }
+    .callout-body strong { color: #E6EDF3; }
+    .callout.warn  { border-left: 3px solid var(--orange); }
+    .callout.good  { border-left: 3px solid var(--green); }
+    .callout.info  { border-left: 3px solid var(--accent); }
+
+    /* ── Findings list ───────────────────────────────── */
+    .findings {
+      list-style: none;
+      margin: 1.5rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .findings li {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.9rem;
+      align-items: start;
+      font-size: 0.92rem;
+      color: var(--text);
+    }
+    .findings li .badge {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 2px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      margin-top: 0.2rem;
+    }
+    .badge.orange { background: rgba(250,179,135,0.12); color: var(--orange); border: 1px solid rgba(250,179,135,0.25); }
+    .badge.blue   { background: rgba(137,180,250,0.10); color: var(--accent); border: 1px solid rgba(137,180,250,0.25); }
+    .badge.green  { background: rgba(166,227,161,0.10); color: var(--green);  border: 1px solid rgba(166,227,161,0.25); }
+    .badge.red    { background: rgba(243,139,168,0.10); color: var(--red);    border: 1px solid rgba(243,139,168,0.25); }
+
+    /* ── Footer ──────────────────────────────────────── */
+    .post-footer {
+      margin-top: 5rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .post-footer a {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--accent);
+      border: none;
+    }
+    .post-footer a:hover { opacity: 0.8; }
+
+    hr.divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 3rem 0;
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 1rem 1.25rem; }
+      .nav-links { gap: 1.2rem; }
+      .wrapper { padding: 3rem 1.25rem 6rem; }
+      .method-row { grid-template-columns: 1fr; }
+      .method-cell { border-right: none; border-bottom: 1px solid var(--border); }
+      .method-cell:last-child { border-bottom: none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="https://shlokasheth.netlify.app">SS</a>
+  <ul class="nav-links">
+    <li><a href="https://shlokasheth.netlify.app">Overview</a></li>
+    <li><a href="https://shlokasheth.netlify.app/experience">Experience</a></li>
+    <li><a href="https://shlokasheth.netlify.app/projects">Projects</a></li>
+    <li><a href="https://shlokasheth.netlify.app/thinking">Thinking</a></li>
+  </ul>
+</nav>
+
+<div class="wrapper">
+
+  <!-- ── Header ─────────────────────────────────────── -->
+  <header class="post-header">
+    <div class="post-tag">Causal Inference · Product Analytics</div>
+    <h1>When A/B Lift Lies:<br><em>Recovering Causal Effects</em><br>from a Non-Random Rollout</h1>
+    <div class="post-meta">
+      <span>Shlok Sheth</span>
+      <span>March 2026</span>
+      <span>PSM · DiD · Uplift Modeling</span>
+      <span><a href="https://github.com/Shlok1375/causal-inference-portfolio" target="_blank">GitHub ↗</a></span>
+    </div>
+  </header>
+
+  <!-- ── TL;DR ──────────────────────────────────────── -->
+  <div class="tldr">
+    <div class="tldr-label">TL;DR</div>
+    <p>
+      A product team saw a <strong>6.45% lift</strong> in conversions and nearly launched. The lift was real —
+      but 85.7% of it was selection bias, not the feature. Using propensity score matching, difference-in-differences,
+      and uplift modeling, I recovered a true ATE of <strong>0.0092</strong> and identified that the bottom 25%
+      of users actually showed <em>negative</em> lift. The recommendation: targeted rollout to the top uplift
+      quartile only.
+    </p>
+  </div>
+
+  <!-- ── The Setup ──────────────────────────────────── -->
+  <h2>The Setup</h2>
+
+  <p>
+    In an ideal world, every product feature gets a clean randomized experiment. In practice, rollouts
+    are often staged, prioritized by user tier, or shaped by engineering constraints. When treatment
+    assignment correlates with user quality, naive before/after or treated/control comparisons are
+    biased — sometimes severely.
+  </p>
+
+  <p>
+    This project simulates exactly that scenario using a dataset structured like the
+    <a href="https://ailab.criteo.com/criteo-uplift-modeling-dataset/" target="_blank">Criteo Uplift Modeling Dataset (v2.1)</a>
+    — 100,000 users, 12 anonymized features, a non-random treatment flag, a pre-period visit signal,
+    and a post-period conversion outcome.
+  </p>
+
+  <div class="callout warn">
+    <div class="callout-icon">⚠</div>
+    <div class="callout-body">
+      <strong>The core problem:</strong> High-engagement users were more likely to receive the feature.
+      Any metric difference between treated and control reflects both the feature's causal effect
+      <em>and</em> the pre-existing quality gap between the groups. Naive lift conflates the two.
+    </div>
+  </div>
+
+  <!-- ── Diagnosing the Bias ────────────────────────── -->
+  <h2>Step 1 — Diagnosing the Bias</h2>
+
+  <p>
+    Before applying any correction, I quantified imbalance using <strong>standardized mean differences (SMD)</strong>
+    for each of the 12 features. An SMD above 0.10 indicates meaningful imbalance that will bias a naive comparison.
+  </p>
+
+  <div class="code-block"><pre><span class="c-muted"># Standardized mean difference per feature</span>
+smd = ((treated_means - control_means) / pooled_std)<span class="c-orange">.abs()</span>
+
+<span class="c-muted"># Result: several features well above the 0.10 threshold</span>
+<span class="c-green">f0:  0.241  ← high imbalance</span>
+<span class="c-green">f1:  0.178  ← high imbalance</span>
+<span class="c-blue">f5:  0.043  ← acceptable</span>
+<span class="c-blue">f9:  0.031  ← acceptable</span></pre></div>
+
+  <p>
+    Several features showed SMDs well above 0.10, confirming that the treated and control populations
+    were systematically different before the feature was ever shown. The naive 6.45% lift is measuring
+    mostly this pre-existing quality gap, not the feature's causal effect.
+  </p>
+
+  <!-- ── Method 1: PSM ──────────────────────────────── -->
+  <h2>Method 1 — Propensity Score Matching</h2>
+
+  <p>
+    Propensity Score Matching (PSM) addresses selection bias by constructing a matched comparison group.
+    Each treated user is paired with a control user who had the same estimated <em>probability</em> of
+    being treated — effectively making the two groups statistically equivalent on observed features.
+  </p>
+
+  <h3>How it works</h3>
+  <p>
+    I estimated propensity scores using logistic regression on all 12 features, verified distributional
+    overlap (common support), then ran 1:1 nearest-neighbor matching. After matching, the average SMD
+    dropped from <strong>0.088 to 0.014</strong> — well below the 0.10 threshold on every feature.
+  </p>
+
+  <div class="code-block"><pre><span class="c-muted"># Estimate propensity scores</span>
+lr = <span class="c-blue">LogisticRegression</span>(max_iter=1000)
+lr.fit(X_scaled, treatment)
+df[<span class="c-orange">'ps'</span>] = lr.predict_proba(X_scaled)[:, 1]
+
+<span class="c-muted"># 1:1 nearest-neighbor matching</span>
+nn = <span class="c-blue">NearestNeighbors</span>(n_neighbors=1)
+nn.fit(control_sample[[<span class="c-orange">'ps'</span>]])
+distances, indices = nn.kneighbors(treated_sample[[<span class="c-orange">'ps'</span>]])
+
+<span class="c-muted"># ATE on matched sample</span>
+psm_ate = (matched_treated[<span class="c-orange">'conversion'</span>].values
+         - matched_control[<span class="c-orange">'conversion'</span>].values).mean()
+<span class="c-green"># PSM ATE: 0.0092</span></pre></div>
+
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="val orange">0.0645</div>
+      <div class="label">Naive Lift</div>
+      <div class="sub">Biased — selection<br>bias present</div>
+    </div>
+    <div class="metric-card">
+      <div class="val blue">0.0092</div>
+      <div class="label">PSM ATE</div>
+      <div class="sub">Corrected for<br>observed confounders</div>
+    </div>
+    <div class="metric-card">
+      <div class="val green">85.7%</div>
+      <div class="label">Bias Removed</div>
+      <div class="sub">Naive overstated<br>by this factor</div>
+    </div>
+    <div class="metric-card">
+      <div class="val gold">[0.0071,<br>0.0114]</div>
+      <div class="label">95% CI</div>
+      <div class="sub">Bootstrap<br>confidence interval</div>
+    </div>
+  </div>
+
+  <!-- ── Method 2: DiD ──────────────────────────────── -->
+  <h2>Method 2 — Difference-in-Differences</h2>
+
+  <p>
+    DiD uses time structure to control for unobserved baseline differences. Instead of comparing
+    treated vs control directly, it compares the <em>change</em> in outcomes between periods.
+    If both groups would have trended the same way without the feature (parallel trends), the
+    difference in their changes is a valid causal estimate.
+  </p>
+
+  <p>
+    I used the <code>visit</code> column as a pre-period engagement proxy and <code>conversion</code>
+    as the post-period outcome. The DiD estimate came out at <strong>0.0189</strong> — closer to
+    the ground truth ATE of 0.0142 than the naive 0.0645.
+  </p>
+
+  <div class="code-block"><pre><span class="c-muted"># DiD table</span>
+                   Treated   Control   Diff
+Pre  (visit rate)  <span class="c-blue">0.5962</span>    <span class="c-orange">0.5013</span>    <span class="c-gold">+0.0949</span>
+Post (conv rate)   <span class="c-blue">0.3869</span>    <span class="c-orange">0.3730</span>    <span class="c-gold">+0.0139</span>
+
+DiD = (0.3869 - 0.5962) - (0.3730 - 0.5013)
+    = <span class="c-green">0.0189</span>  ← causal estimate</pre></div>
+
+  <!-- ── Method 3: Uplift ───────────────────────────── -->
+  <h2>Method 3 — Uplift Modeling</h2>
+
+  <p>
+    PSM and DiD both estimate a single population-average effect. But in product analytics, the
+    actionable question is more granular: <strong>which users actually respond to the treatment,
+    and which are unaffected or harmed?</strong>
+  </p>
+
+  <p>
+    I implemented a T-Learner (two-model approach) using Gradient Boosting — training separate
+    models on treated and control users, then computing individual uplift as the difference in
+    predicted conversion probabilities.
+  </p>
+
+  <div class="code-block"><pre><span class="c-muted"># T-Learner: train separately on treated and control</span>
+model_t = <span class="c-blue">GradientBoostingClassifier</span>()
+model_c = <span class="c-blue">GradientBoostingClassifier</span>()
+
+model_t.fit(treated_data[features], treated_data[<span class="c-orange">'conversion'</span>])
+model_c.fit(control_data[features], control_data[<span class="c-orange">'conversion'</span>])
+
+<span class="c-muted"># Individual uplift score</span>
+uplift = model_t.predict_proba(X)[:, 1] - model_c.predict_proba(X)[:, 1]</pre></div>
+
+  <h3>Segment results</h3>
+
+  <div class="method-grid">
+    <div class="method-row header">
+      <div class="method-cell">Segment</div>
+      <div class="method-cell">Avg Uplift Score</div>
+      <div class="method-cell">Observed Lift</div>
+    </div>
+    <div class="method-row">
+      <div class="method-cell">Bottom 25% — Lost Causes</div>
+      <div class="method-cell" style="color:var(--red);">−0.0640</div>
+      <div class="method-cell" style="color:var(--red);">−0.205</div>
+    </div>
+    <div class="method-row">
+      <div class="method-cell">Q2 — Low Responders</div>
+      <div class="method-cell" style="color:var(--gold);">−0.0013</div>
+      <div class="method-cell" style="color:var(--gold);">+0.001</div>
+    </div>
+    <div class="method-row">
+      <div class="method-cell">Q3 — Persuadables</div>
+      <div class="method-cell" style="color:var(--accent);">+0.0325</div>
+      <div class="method-cell" style="color:var(--accent);">+0.135</div>
+    </div>
+    <div class="method-row">
+      <div class="method-cell">Top 25% — Sure Things</div>
+      <div class="method-cell" style="color:var(--green);">+0.0961</div>
+      <div class="method-cell" style="color:var(--green);">+0.334</div>
+    </div>
+  </div>
+
+  <p>
+    The top quartile shows an observed lift of <strong>+0.334</strong> — roughly 5x the naive
+    population average. The bottom quartile shows a <strong>negative</strong> lift of −0.205.
+    Broad rollout would have given away value to the wrong users while actively hurting conversion
+    for others.
+  </p>
+
+  <!-- ── Results ────────────────────────────────────── -->
+  <h2>Results</h2>
+
+  <div class="method-grid">
+    <div class="method-row header">
+      <div class="method-cell">Method</div>
+      <div class="method-cell">Estimate</div>
+      <div class="method-cell">Notes</div>
+    </div>
+    <div class="method-row">
+      <div class="method-cell">Naive comparison</div>
+      <div class="method-cell" style="color:var(--orange);">0.0645</div>
+      <div class="method-cell">Selection bias present</div>
+    </div>
+    <div class="method-row">
+      <div class="method-cell">PSM ATE</div>
+      <div class="method-cell" style="color:var(--accent);">0.0092</div>
+      <div class="method-cell">Observed confounders removed</div>
+    </div>
+    <div class="method-row">
+      <div class="method-cell">DiD estimate</div>
+      <div class="method-cell" style="color:var(--purple);">0.0189</div>
+      <div class="method-cell">Baseline differences controlled</div>
+    </div>
+    <div class="method-row">
+      <div class="method-cell">Ground truth ATE</div>
+      <div class="method-cell" style="color:var(--gold);">0.0142</div>
+      <div class="method-cell">Known from data generation</div>
+    </div>
+  </div>
+
+  <!-- ── Recommendation ────────────────────────────── -->
+  <h2>Recommendation</h2>
+
+  <p>
+    The naive 6.45% lift was almost entirely a measurement artifact. Both causal methods
+    converge on a much smaller true effect — and uplift modeling reveals that this small average
+    hides enormous heterogeneity across users.
+  </p>
+
+  <ul class="findings">
+    <li>
+      <span class="badge orange">Do Not</span>
+      <span>Report the naive 6.45% lift to stakeholders or use it to justify a full launch. It overstates the true causal effect by 85.7%.</span>
+    </li>
+    <li>
+      <span class="badge blue">Correct</span>
+      <span>Use PSM ATE of 0.0092 as the headline estimate, with the bootstrap 95% CI [0.0071, 0.0114] for statistical honesty.</span>
+    </li>
+    <li>
+      <span class="badge green">Target</span>
+      <span>Restrict rollout to users in the top uplift quartile. They show 5x the average lift — dramatically better ROI per treated user.</span>
+    </li>
+    <li>
+      <span class="badge red">Avoid</span>
+      <span>Rolling out to the bottom 25%. Observed lift is negative — treating these users actively hurts conversion.</span>
+    </li>
+  </ul>
+
+  <div class="callout good">
+    <div class="callout-icon">→</div>
+    <div class="callout-body">
+      <strong>Next step:</strong> Run a follow-up RCT restricted to high-uplift-score users.
+      This validates the T-Learner's ITE estimates before a permanent launch decision
+      and provides a clean causal estimate for a pre-specified population.
+    </div>
+  </div>
+
+  <!-- ── Limitations ────────────────────────────────── -->
+  <h2>Limitations</h2>
+
+  <p>
+    <strong>PSM</strong> corrects only for <em>observed</em> confounders. Unmeasured variables —
+    device type, geography, session depth — may still bias the estimate.
+  </p>
+  <p>
+    <strong>DiD</strong> relies on the parallel trends assumption. The visit rate is an imperfect
+    proxy for pre-period behavior, and the assumption cannot be directly tested with a single pre-period.
+  </p>
+  <p>
+    <strong>Uplift model</strong> estimates were trained on observational data. Individual treatment
+    effect predictions should be treated as directional signals, not causal facts, until confirmed
+    via a controlled experiment.
+  </p>
+
+  <hr class="divider" />
+
+  <!-- ── Footer ─────────────────────────────────────── -->
+  <footer class="post-footer">
+    <a href="https://shlokasheth.netlify.app/thinking">← All writing</a>
+    <a href="https://github.com/Shlok1375/causal-inference-portfolio" target="_blank">View notebook on GitHub ↗</a>
+  </footer>
+
+</div>
+</body>
+</html>
