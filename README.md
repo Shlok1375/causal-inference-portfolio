@@ -1,13 +1,13 @@
 # Causal Inference in Product Analytics
 ### Recovering True Treatment Effects from a Non-Random Feature Rollout
 
-**Author:** Shlok Sheth | [Portfolio](https://shlokasheth.netlify.app) | [LinkedIn](https://www.linkedin.com/in/shlok-sheth2016/)
+**Author:** Shlok Sheth | [Portfolio](https://shloksh.netlify.app) | [LinkedIn](https://www.linkedin.com/in/shlok-sheth2016/)
 
 ---
 
 ## The Problem
 
-A product team rolled out a new ad feature to a subset of users. The rollout was **not randomized** — high-engagement users were more likely to receive the feature. A naive comparison reports a **6.45% lift** in conversion rate and recommends full launch.
+A product team rolled out a new ad feature to a subset of users. The rollout was **not randomized**: high-engagement users were more likely to receive the feature. A naive comparison reports a **6.45% lift** in conversion rate and recommends full launch.
 
 Is that lift real, or mostly explained by the fact that better users were targeted to begin with?
 
@@ -43,9 +43,9 @@ Top 25% (Sure Things):        ~5x the naive population lift
 
 ## Business Recommendation
 
-**Do not ask "Did it work?" — ask "For whom, and at what cost?"**
+**Do not ask "Did it work?", ask "For whom, and at what cost?"**
 
-- Restrict rollout to the **top uplift quartile** — concentrates resources on Persuadables and avoids harming Sleeping Dogs
+- Restrict rollout to the **top uplift quartile**, concentrates resources on Persuadables and avoids harming Sleeping Dogs
 - Validate ITE estimates via a follow-up RCT before permanent launch
 - Never report naive A/B lift without checking for selection bias in treatment assignment
 
@@ -113,17 +113,17 @@ scikit-learn>=1.1
 jupyter>=1.0
 ```
 
-All dependencies are standard Python data science packages. The T-Learner uplift model is implemented from scratch using scikit-learn's GradientBoostingClassifier — no specialized causal inference libraries required.
+All dependencies are standard Python data science packages. The T-Learner uplift model is implemented from scratch using scikit-learn's GradientBoostingClassifier, no specialized causal inference libraries required.
 
 ---
 
 ## Limitations
 
-1. PSM corrects only for observed confounders — unmeasured confounding may remain
+1. PSM corrects only for observed confounders, unmeasured confounding may remain
 2. DiD relies on the parallel trends assumption, which cannot be directly tested
 3. Uplift model estimates are directional signals until validated via RCT
-4. Results based on a synthetic sample — re-run on the full Criteo dataset for production use
+4. Results based on a synthetic sample, re-run on the full Criteo dataset for production use
 
 ---
 
-*Part of my product data science portfolio. See [shlokasheth.netlify.app](https://shlokasheth.netlify.app) for more.*
+*Part of my product data science portfolio. See [shlokasheth.netlify.app](https://shloksh.netlify.app) for more.*
