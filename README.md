@@ -75,7 +75,7 @@ causal-inference-portfolio/
 
 ## Dataset
 
-This project uses a **100K-row synthetic dataset** that exactly mirrors the structure of the [Criteo Uplift Modeling Dataset (v2.1)](https://ailab.criteo.com/criteo-uplift-modeling-dataset/).
+This project uses a **100K-row synthetic dataset** that exactly mirrors the structure of the [Criteo Uplift Modeling Dataset](https://ailab.criteo.com/criteo-uplift-modeling-dataset/).
 
 To run the notebook on the real 14M-row dataset:
 1. Download `criteo-uplift-v2.1.csv.gz` from the Criteo AI Lab
