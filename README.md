@@ -1,7 +1,7 @@
 # Causal Inference in Product Analytics
 ### Recovering True Treatment Effects from a Non-Random Feature Rollout
 
-**Author:** Shlok Sheth | [Portfolio](https://shloksh.netlify.app) | [LinkedIn](https://www.linkedin.com/in/shlok-sheth2016/)
+**Author:** Shlok Sheth | [Portfolio](https://shethshlok.netlify.app) | [LinkedIn](https://www.linkedin.com/in/shlok-sheth2016/)
 
 ---
 
@@ -126,4 +126,4 @@ All dependencies are standard Python data science packages. The T-Learner uplift
 
 ---
 
-*Part of my product data science portfolio. See [shlokasheth.netlify.app](https://shloksh.netlify.app) for more.*
+*Part of my product data science portfolio. See [shethshlok.netlify.app](https://shethshlok.netlify.app) for more.*
