@@ -94,7 +94,7 @@ To run the notebook on the real 14M-row dataset:
 ## Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/causal-inference-portfolio.git
+git clone https://github.com/Shlok1375/causal-inference-portfolio.git
 cd causal-inference-portfolio
 pip install -r requirements.txt
 jupyter notebook notebooks/criteo_causal_analysis.ipynb
