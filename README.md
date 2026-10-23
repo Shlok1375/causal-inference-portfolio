@@ -1,95 +1,51 @@
 # Causal Inference in Product Analytics
-### Recovering True Treatment Effects from a Non-Random Feature Rollout
+### Recovering the True Effect of a Non-Random Feature Rollout
 
 **Author:** Shlok Sheth | [Portfolio](https://shethshlok.netlify.app) | [LinkedIn](https://www.linkedin.com/in/shlok-sheth2016/)
 
----
-
 ## The Problem
 
-A product team rolled out a new ad feature to a subset of users. The rollout was **not randomized**: high-engagement users were more likely to receive the feature. A naive comparison reports a **6.45% lift** in conversion rate and recommends full launch.
+A product team rolled out a new feature to some users, but not at random: high-engagement users were more likely to get it. A naive comparison shows a **6.45-point lift** in conversion and suggests a full launch.
 
-Is that lift real, or mostly explained by the fact that better users were targeted to begin with?
+How much of that lift is the feature, and how much is just that better users got it first?
 
-This project answers that question using three complementary causal inference methods and demonstrates that the naive estimate overstates the true causal effect by **85.7%**.
-
----
-
-## Methods
-
-| Method | Purpose | Key Result |
-|--------|---------|------------|
-| Propensity Score Matching (PSM) | Correct for observed selection bias | ATE: 0.0092 |
-| Difference-in-Differences (DiD) | Control for pre-period baseline differences | Estimate: 0.0189 |
-| Uplift Modeling (T-Learner) | Identify which users actually respond | Top 25%: ~5x avg lift |
-
----
+The data is simulated, so the true effect is known (**0.0142**). That makes it possible to check how close each method gets.
 
 ## Key Findings
 
-```
-Naive lift (biased):          0.0645   <- what a bad analyst reports
-PSM ATE (corrected):          0.0092   <- true population-average effect
-DiD estimate:                 0.0189   <- parallel trends approach
-Ground truth ATE (synthetic): 0.0142   <- known from data generation
+| Estimate | Value | vs. true effect (0.0142) |
+|---|---|---|
+| Naive comparison | 0.0645 | 4.5x too high |
+| Propensity score matching (PSM) | 0.0092 (95% CI: −0.011 to 0.028) | Removes most of the bias; CI includes 0 |
+| Difference-in-differences (DiD) | 0.0189 | Illustrative only (see limitations) |
 
-Naive overstatement: 85.7%
+**The naive estimate is 4.5x the true effect: 78% of the apparent lift is selection bias.** Launching on it would have badly overstated the feature's value.
 
-Bottom 25% (Lost Causes):     negative observed lift -- do NOT target
-Top 25% (Sure Things):        ~5x the naive population lift
-```
+An uplift model (T-learner) also ranks users from negative to strongly positive response, which suggests the feature helps some users and hurts others. That ranking is directional only (see limitations).
 
----
+## Recommendation
 
-## Business Recommendation
+Don't ask "did it work?" Ask "for whom, and by how much?"
 
-**Do not ask "Did it work?", ask "For whom, and at what cost?"**
+- Don't launch broadly on the naive number
+- Run a randomized test, ideally stratified by uplift score, to measure the true effect and confirm who responds
+- Always check how treatment was assigned before trusting a lift
 
-- Restrict rollout to the **top uplift quartile**, concentrates resources on Persuadables and avoids harming Sleeping Dogs
-- Validate ITE estimates via a follow-up RCT before permanent launch
-- Never report naive A/B lift without checking for selection bias in treatment assignment
+## Methods
 
----
+| Method | What it does |
+|---|---|
+| Propensity score matching | Matches treated and untreated users with similar characteristics |
+| Difference-in-differences | Compares change over time between groups |
+| T-learner uplift model | Estimates which users respond to the feature |
 
-## Project Structure
+The T-learner is built from scratch with scikit-learn's GradientBoostingClassifier; no causal inference libraries.
 
-```
-causal-inference-portfolio/
-├── data/
-│   └── criteo_uplift_sample.csv      <- Synthetic dataset (Criteo v2.1 structure)
-├── notebooks/
-│   └── criteo_causal_analysis.ipynb  <- Full analysis notebook
-├── figures/
-│   ├── 01_covariate_imbalance.png
-│   ├── 02_propensity_scores.png
-│   ├── 03_balance_check.png
-│   ├── 04_did_comparison.png
-│   ├── 05_uplift_segments.png
-│   ├── 06_qini_curve.png
-│   └── 07_summary_dashboard.png
-├── requirements.txt
-└── README.md
-```
+## Files
 
----
-
-## Dataset
-
-This project uses a **100K-row synthetic dataset** that exactly mirrors the structure of the Criteo Uplift Modeling Dataset.
-
-To run the notebook on the real 14M-row dataset:
-1. Download `criteo-uplift-v2.1.csv.gz` from the Criteo AI Lab
-2. Place it in the `data/` folder
-3. In the notebook, replace:
-   ```python
-   df = pd.read_csv('../data/criteo_uplift_sample.csv')
-   ```
-   with:
-   ```python
-   df = pd.read_csv('../data/criteo-uplift-v2.1.csv.gz')
-   ```
-
----
+- `criteo_causal_analysis.ipynb`: full analysis, with outputs
+- `criteo_uplift_sample.csv`: 100,000 simulated users, same structure as the Criteo Uplift Modeling Dataset v2.1
+- `*.png`: figures
 
 ## Setup
 
@@ -97,33 +53,16 @@ To run the notebook on the real 14M-row dataset:
 git clone https://github.com/Shlok1375/causal-inference-portfolio.git
 cd causal-inference-portfolio
 pip install -r requirements.txt
-jupyter notebook notebooks/criteo_causal_analysis.ipynb
+jupyter notebook criteo_causal_analysis.ipynb
 ```
 
----
-
-## Requirements
-
-```
-pandas>=1.5
-numpy>=1.23
-matplotlib>=3.6
-seaborn>=0.12
-scikit-learn>=1.1
-jupyter>=1.0
-```
-
-All dependencies are standard Python data science packages. The T-Learner uplift model is implemented from scratch using scikit-learn's GradientBoostingClassifier, no specialized causal inference libraries required.
-
----
+To run on the real 14M-row dataset, download `criteo-uplift-v2.1.csv.gz` from the Criteo AI Lab, place it in this folder, and change the `read_csv` path in the notebook. The real data has no known true effect.
 
 ## Limitations
 
-1. PSM corrects only for observed confounders, unmeasured confounding may remain
-2. DiD relies on the parallel trends assumption, which cannot be directly tested
-3. Uplift model estimates are directional signals until validated via RCT
-4. Results based on a synthetic sample, re-run on the full Criteo dataset for production use
-
----
+1. **PSM** only corrects for confounders it can see. Unmeasured ones may remain.
+2. **DiD** here uses visits as a stand-in for the pre-period, because the data has no earlier conversion. A valid DiD compares the same outcome before and after, so this estimate is illustrative only.
+3. **Uplift segments** are scored on the same users the models were trained on, within non-random groups. Both exaggerate differences between segments, so validate with a randomized test before targeting.
+4. **Simulated data:** results show how the methods behave, not real user behavior.
 
 *Part of my product data science portfolio. See [shethshlok.netlify.app](https://shethshlok.netlify.app) for more.*
